@@ -1,4 +1,5 @@
 {
+  "originHash" : "b88e4965ca30ad25333aa9b274b39df1c42c088cacaac6c695df81268cc7ea98",
   "pins" : [
     {
       "identity" : "nostr",
@@ -6,7 +7,7 @@
       "location" : "https://github.com/Galaxoid-Labs/Nostr.git",
       "state" : {
         "branch" : "main",
-        "revision" : "0604104516b195dddd4c6b05a6dbbed0e4cf11a9"
+        "revision" : "99cea0482a7b7e5486f3f5cf69008b6805d49eab"
       }
     },
     {
@@ -21,12 +22,12 @@
     {
       "identity" : "starscream",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/daltoniam/Starscream.git",
+      "location" : "https://github.com/Galaxoid-Labs/Starscream.git",
       "state" : {
-        "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
-        "version" : "4.0.8"
+        "branch" : "linux_fix",
+        "revision" : "56c77dd610d73670da8d473e1c1a52064da1f5c9"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

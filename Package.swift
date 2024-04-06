@@ -1,10 +1,10 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.10
 
 import PackageDescription
 
 let package = Package(
     name: "NostrClient",
-    platforms: [.iOS(.v16), .macOS(.v13), .macCatalyst(.v16)],
+    platforms: [.iOS(.v16), .macOS(.v13), .macCatalyst(.v16), .visionOS(.v1)],
     products: [
         .library(
             name: "NostrClient",
@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Galaxoid-Labs/Nostr.git", branch: "main"),
-        .package(url: "https://github.com/daltoniam/Starscream.git", from: "4.0.8")
+        .package(url: "https://github.com/Galaxoid-Labs/Starscream.git", branch: "linux_fix")
     ],
     targets: [
         .target(
