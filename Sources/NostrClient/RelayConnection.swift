@@ -37,6 +37,7 @@ public class RelayConnection {
                 if let subscriptionQueue = self?.subscriptionQueue {
                     for sub in subscriptionQueue {
                         if let clientMessage = try? ClientMessage.subscribe(sub).string() {
+                            print(clientMessage)
                             self?.webSocket.write(string: clientMessage)
                         }
                     }

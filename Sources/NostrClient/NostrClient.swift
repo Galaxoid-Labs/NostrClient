@@ -7,6 +7,7 @@ public class NostrClient: ObservableObject {
     public init() {}
 
     @Published private(set) public var relayConnections: [RelayConnection] = []
+    public var delegate: NostrClientDelegate?
     
     public func add(relayUrl: String, write: Bool = false, subscriptions: [Subscription] = []) {
         let relayDef = RelayDef(relayUrl: relayUrl, write: write, subscriptions: subscriptions)
@@ -55,23 +56,28 @@ public class NostrClient: ObservableObject {
 
 }
 
+public protocol NostrClientDelegate: AnyObject {
+    func didReceive(message: RelayMessage, relayUrl: String)
+}
+
 extension NostrClient: RelayConnectionDelegate {
     
     public func didReceive(message: Nostr.RelayMessage, relayUrl: String) {
-        print("Received message from \(relayUrl)\n")
-        switch message {
-            case .event(let id, let event):
-                if event.isValid() {
-                    print("Valid event: \(event.id)\n")
-                    print("EventKind: \(event.kind)")
-                } else {
-                    print("Invalid event: \(event.id)")
-                }
-            case .notice(let notice):
-                print(notice)
-            case .other(let other):
-                print(other)
-        }
+        //print("Received message from \(relayUrl)\n")
+        delegate?.didReceive(message: message, relayUrl: relayUrl)
+//        switch message {
+//            case .event(let id, let event):
+//                if event.isValid() {
+//                    print("Valid event: \(event.id)\n")
+//                    print("EventKind: \(event.kind)")
+//                } else {
+//                    print("Invalid event: \(event.id)")
+//                }
+//            case .notice(let notice):
+//                print(notice)
+//            case .other(let other):
+//                print(other)
+//        }
     }
     
 }
