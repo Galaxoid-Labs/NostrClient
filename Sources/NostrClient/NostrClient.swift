@@ -30,7 +30,7 @@ public class NostrClient: ObservableObject {
                 }
             }
         } else {
-            for (idx, v) in relayConnections.enumerated() {
+            for (idx, _) in relayConnections.enumerated() {
                 relayConnections[idx].add(subscriptions: subscriptions)
             }
         }
