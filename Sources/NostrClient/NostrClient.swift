@@ -63,21 +63,7 @@ public protocol NostrClientDelegate: AnyObject {
 extension NostrClient: RelayConnectionDelegate {
     
     public func didReceive(message: Nostr.RelayMessage, relayUrl: String) {
-        //print("Received message from \(relayUrl)\n")
         delegate?.didReceive(message: message, relayUrl: relayUrl)
-//        switch message {
-//            case .event(let id, let event):
-//                if event.isValid() {
-//                    print("Valid event: \(event.id)\n")
-//                    print("EventKind: \(event.kind)")
-//                } else {
-//                    print("Invalid event: \(event.id)")
-//                }
-//            case .notice(let notice):
-//                print(notice)
-//            case .other(let other):
-//                print(other)
-//        }
     }
     
 }

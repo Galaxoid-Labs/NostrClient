@@ -73,7 +73,6 @@ public protocol RelayConnectionDelegate: AnyObject {
 extension RelayConnection: WebSocketDelegate {
     
     public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
-        
         switch event {
         case .connected(let headers):
                 self.isConnected = true
@@ -85,29 +84,20 @@ extension RelayConnection: WebSocketDelegate {
                 if let relayMessage = try? RelayMessage(text: string) {
                     self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDef.relayUrl)
                 }
-        case .binary(let data):
-            print("Received data: \(data.count)")
-        case .ping(_):
-                print("PING")
-            break
-        case .pong(_):
-                print("PONG")
-            break
-        case .viabilityChanged(_):
-            break
-        case .reconnectSuggested(_):
-            break
+        case .binary(let data): break
+        case .ping(_): break
+        case .pong(_): break
+        case .viabilityChanged(_): break
+        case .reconnectSuggested(_): break
         case .cancelled:
                 self.isConnected = false
         case .error(let error):
                 print(error?.localizedDescription ?? "")
                 self.isConnected = false
-            //handleError(error)
-        case .peerClosed:
-            break
+        case .peerClosed: break
         }
-        
     }
+    
 }
 
 extension RelayConnection: Hashable {
