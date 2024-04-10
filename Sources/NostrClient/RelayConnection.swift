@@ -76,10 +76,10 @@ extension RelayConnection: WebSocketDelegate {
         switch event {
         case .connected(let headers):
                 self.isConnected = true
-                print("websocket is connected: \(headers)")
+                print("NostrClient is connected: \(relayDef.relayUrl)")
         case .disconnected(let reason, let code):
                 self.isConnected = false
-                print("websocket is disconnected: \(reason) with code: \(code)")
+                print("NostrClient disconnected from: \(relayDef.relayUrl) with code: \(code)")
         case .text(let string):
                 if let relayMessage = try? RelayMessage(text: string) {
                     self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDef.relayUrl)
@@ -92,7 +92,9 @@ extension RelayConnection: WebSocketDelegate {
         case .cancelled:
                 self.isConnected = false
         case .error(let error):
-                print(error?.localizedDescription ?? "")
+                if let error {
+                    print("NostrClient Error: \(relayDef.relayUrl)" + error.localizedDescription)
+                }
                 self.isConnected = false
         case .peerClosed: break
         }
