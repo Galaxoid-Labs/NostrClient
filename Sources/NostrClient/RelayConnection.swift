@@ -56,6 +56,20 @@ public class RelayConnection {
         self.subscriptionQueue.append(contentsOf: subscriptions)
     }
     
+    public func resubscribeAll() {
+        if self.isConnected {
+            stopSubscriptionQueue()
+            for sub in relayDef.subscriptions {
+                if let clientMessage = try? ClientMessage.unsubscribe(sub.id).string() {
+                    self.webSocket.write(string: clientMessage)
+                }
+            }
+            self.subscriptionQueue.removeAll()
+            self.subscriptionQueue.append(contentsOf: self.relayDef.subscriptions)
+            self.startSubscriptionQueue()
+        }
+    }
+    
     public func connect() {
         if !self.isConnected { self.webSocket.connect() }
     }
@@ -74,17 +88,17 @@ extension RelayConnection: WebSocketDelegate {
     
     public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
         switch event {
-        case .connected(let headers):
+        case .connected(_):
                 self.isConnected = true
                 print("NostrClient is connected: \(relayDef.relayUrl)")
-        case .disconnected(let reason, let code):
+        case .disconnected(_, let code):
                 self.isConnected = false
                 print("NostrClient disconnected from: \(relayDef.relayUrl) with code: \(code)")
         case .text(let string):
                 if let relayMessage = try? RelayMessage(text: string) {
                     self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDef.relayUrl)
                 }
-        case .binary(let data): break
+        case .binary(_): break
         case .ping(_): break
         case .pong(_): break
         case .viabilityChanged(_): break
