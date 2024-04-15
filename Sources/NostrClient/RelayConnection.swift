@@ -31,6 +31,7 @@ public class RelayConnection: NSObject {
         guard let url = relayDefinition.urlRequest else { return nil }
         
         self.relayDefinition = relayDefinition
+        self.delegate = delegate
         
         super.init()
         self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
@@ -141,16 +142,20 @@ public class RelayConnection: NSObject {
 extension  RelayConnection: URLSessionWebSocketDelegate {
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print("\(self.relayDefinition.relayUrl) did open")
+        print("Connected to relay: \(self.relayDefinition.relayUrl)")
         self.connected = true
-        self.startPing()
+        DispatchQueue.main.async {
+            self.startPing()
+        }
         self.subscribe()
     }
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        print("\(self.relayDefinition.relayUrl) did close")
+        print("Disconnected from relay: \(self.relayDefinition.relayUrl)")
         self.connected = false
-        self.stopPing()
+        DispatchQueue.main.async {
+            self.stopPing()
+        }
     }
     
 }
