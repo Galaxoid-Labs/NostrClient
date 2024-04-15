@@ -1,5 +1,5 @@
 {
-  "originHash" : "b88e4965ca30ad25333aa9b274b39df1c42c088cacaac6c695df81268cc7ea98",
+  "originHash" : "bcffef66fcf86652ff13fc6fe80f59d2a390adfe1287e0de1833d4a11cfccfcd",
   "pins" : [
     {
       "identity" : "nostr",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/Galaxoid-Labs/Nostr.git",
       "state" : {
         "branch" : "main",
-        "revision" : "d70ab184f53f18220b8fa1e87f3137be98f5a0fe"
+        "revision" : "404aab58c724196a474c62db7e3fe74df14a6472"
       }
     },
     {
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "347b84ed2aad2305a7233f2a48d76f41e52062a1",
         "version" : "0.16.0"
-      }
-    },
-    {
-      "identity" : "starscream",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Galaxoid-Labs/Starscream.git",
-      "state" : {
-        "branch" : "linux_fix",
-        "revision" : "3d99e83e654b22f4c529e9e272d48ff89f80f731"
       }
     }
   ],

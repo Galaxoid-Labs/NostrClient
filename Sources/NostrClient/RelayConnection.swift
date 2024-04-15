@@ -7,123 +7,152 @@
 
 import Foundation
 import Nostr
-import Starscream
 
-public class RelayConnection {
-    
-    var relayDef: RelayDef
-    var webSocket: WebSocket
-    var isConnected: Bool
-    var delegate: RelayConnectionDelegate?
-    var subscriptionQueue: [Subscription] = []
-    var subscriptionQueueTimer: Timer?
-    
-    public init?(relayDef: RelayDef, delegate: RelayConnectionDelegate? = nil) {
-        self.relayDef = relayDef
-        self.subscriptionQueue.append(contentsOf: self.relayDef.subscriptions)
-        self.isConnected = false
-        self.delegate = delegate
-        guard let urlRequest = self.relayDef.urlRequest else { return nil }
-        self.webSocket = WebSocket(request: urlRequest)
-        self.webSocket.callbackQueue = DispatchQueue(label: self.relayDef.relayUrl, qos: .background) // TODO: Not sure about this
-        self.webSocket.delegate = self
-        self.startSubscriptionQueue()
-    }
-    
-    func startSubscriptionQueue() {
-        self.stopSubscriptionQueue()
-        self.subscriptionQueueTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            if ((self?.isConnected) != nil) {
-                if let subscriptionQueue = self?.subscriptionQueue {
-                    for sub in subscriptionQueue {
-                        if let clientMessage = try? ClientMessage.subscribe(sub).string() {
-                            print(clientMessage)
-                            self?.webSocket.write(string: clientMessage)
-                        }
-                    }
-                    self?.subscriptionQueue.removeAll()
-                }
-            }
-        }
-    }
-    
-    func stopSubscriptionQueue() {
-        self.subscriptionQueueTimer?.invalidate()
-    }
-    
-    public func add(subscriptions: [Subscription]) {
-        self.relayDef.add(subscriptions: subscriptions)
-        self.subscriptionQueue.append(contentsOf: subscriptions)
-    }
-    
-    public func resubscribeAll() {
-        if self.isConnected {
-            stopSubscriptionQueue()
-            for sub in relayDef.subscriptions {
-                if let clientMessage = try? ClientMessage.unsubscribe(sub.id).string() {
-                    self.webSocket.write(string: clientMessage)
-                }
-            }
-            self.subscriptionQueue.removeAll()
-            self.subscriptionQueue.append(contentsOf: self.relayDef.subscriptions)
-            self.startSubscriptionQueue()
-        }
-    }
-    
-    public func connect() {
-        if !self.isConnected { self.webSocket.connect() }
-    }
-    
-    public func disconnect() {
-        if self.isConnected { self.webSocket.disconnect() }
-    }
-
+public protocol RelayDefinition {
+    var relayUrl: String { get }
+    var write: Bool { get set }
+    var subscriptions: [Subscription] { get set }
+    var urlRequest: URL? { get }
 }
 
 public protocol RelayConnectionDelegate: AnyObject {
     func didReceive(message: RelayMessage, relayUrl: String)
 }
 
-extension RelayConnection: WebSocketDelegate {
+public class RelayConnection: NSObject {
+    var relayDefinition: RelayDefinition
+    var webSocketTask: URLSessionWebSocketTask!
+    var urlSession: URLSession!
+    var delegate: RelayConnectionDelegate?
+    var pingTimer: Timer?
+    var connected = false
     
-    public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
-        switch event {
-        case .connected(_):
-                self.isConnected = true
-                print("NostrClient is connected: \(relayDef.relayUrl)")
-        case .disconnected(_, let code):
-                self.isConnected = false
-                print("NostrClient disconnected from: \(relayDef.relayUrl) with code: \(code)")
-        case .text(let string):
-                if let relayMessage = try? RelayMessage(text: string) {
-                    self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDef.relayUrl)
-                }
-        case .binary(_): break
-        case .ping(_): break
-        case .pong(_): break
-        case .viabilityChanged(_): break
-        case .reconnectSuggested(_): break
-        case .cancelled:
-                self.isConnected = false
-        case .error(let error):
+    public init?(relayDefinition: RelayDefinition, delegate: RelayConnectionDelegate? = nil) {
+        guard let url = relayDefinition.urlRequest else { return nil }
+        
+        self.relayDefinition = relayDefinition
+        
+        super.init()
+        self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        self.webSocketTask = self.urlSession.webSocketTask(with: url)
+    }
+    
+    public func connect() {
+        webSocketTask.resume()
+        self.listen()
+    }
+    
+    public func disconnect() {
+        self.unsubscribe()
+        webSocketTask.cancel(with: .goingAway, reason: nil)
+    }
+    
+    func add(subscriptions: [Subscription]) {
+        for sub in subscriptions {
+            if let index = self.relayDefinition.subscriptions.firstIndex(where: { $0.id == sub.id }) {
+                self.relayDefinition.subscriptions[index] = sub
+                self.subscribe(with: sub)
+            } else {
+                self.relayDefinition.subscriptions.append(sub)
+                self.subscribe(with: sub)
+            }
+        }
+    }
+    
+    func send(event: Event) {
+        if let clientMessage = try? ClientMessage.event(event).string() {
+            self.send(text: clientMessage)
+        }
+    }
+    
+    func send(text: String) {
+        self.webSocketTask.send(URLSessionWebSocketTask.Message.string(text)) { error in
+            if let error {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    func listen() {
+        webSocketTask.receive { result in
+            switch result {
+                case .success(let message):
+                    switch message {
+                        case .data(_): break
+                        case .string(let text):
+                            if let relayMessage = try? RelayMessage(text: text) {
+                                self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDefinition.relayUrl)
+                            }
+                        @unknown default:
+                            print("Uknown response")
+                    }
+                    self.listen()
+                case .failure(let error):
+                    print("NostrClient Error: \(self.relayDefinition.relayUrl)" + error.localizedDescription)
+            }
+        }
+    }
+    
+    func startPing() {
+        self.stopPing()
+        self.pingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true, block: { [weak self] timer in
+            self?.webSocketTask.sendPing(pongReceiveHandler: { error in
                 if let error {
-                    print("NostrClient Error: \(relayDef.relayUrl)" + error.localizedDescription)
+                    print(error.localizedDescription)
                 }
-                self.isConnected = false
-        case .peerClosed: break
+            })
+        })
+    }
+    
+    func stopPing() {
+        self.pingTimer?.invalidate()
+    }
+    
+    func subscribe() {
+        for sub in relayDefinition.subscriptions {
+            subscribe(with: sub)
+        }
+    }
+    
+    func unsubscribe() {
+        for sub in relayDefinition.subscriptions {
+            unsubscribe(withId: sub.id)
+        }
+    }
+    
+    func unsubscribe(withId id: String) {
+        if connected {
+            if let clientMessage = try? ClientMessage.unsubscribe(id).string() {
+                self.send(text: clientMessage)
+            }
+        }
+    }
+        
+    func subscribe(with subscription: Subscription) {
+        if connected {
+            if let clientMessage = try? ClientMessage.subscribe(subscription).string() {
+                self.send(text: clientMessage)
+            }
         }
     }
     
 }
 
-extension RelayConnection: Hashable {
+extension  RelayConnection: URLSessionWebSocketDelegate {
     
-    public static func == (lhs: RelayConnection, rhs: RelayConnection) -> Bool {
-        lhs.relayDef == rhs.relayDef
+    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("\(self.relayDefinition.relayUrl) did open")
+        self.connected = true
+        self.startPing()
+        self.subscribe()
     }
     
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(relayDef.hashValue)
+    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("\(self.relayDefinition.relayUrl) did close")
+        self.connected = false
+        self.stopPing()
     }
     
 }
+
+

@@ -10,13 +10,15 @@ NostrClient is a lightweight Swift package for handling socket connections and s
 - [Nostr](https://github.com/Galaxoid-Labs/Nostr.swift)
 
 # Platforms
-- ✅ MacOS
-- ✅ iOS
-- ✅ iPadOS
-- ✅ MacCatalyst
-- ✅ VisionOS
-- ❓ Linux
-- ❓ Windows
+- ✅ MacOS 14+
+- ✅ iOS 17+
+- ✅ iPadOS 17+
+- ✅ MacCatalyst 17+
+- ✅ VisionOS 1+
+- ✅ tvOS 17+ 
+- ✅ watchOS 10+
+- ❓ Linux (Unfortunatley I dont belive that URLSessionWebSocketTask works on Linux)
+- ❓ Windows (Unfortunatley I dont belive that URLSessionWebSocketTask works on Windows)
 
 # Todo
 - Documentation
