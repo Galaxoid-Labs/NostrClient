@@ -8,29 +8,19 @@
 import Foundation
 import Nostr
 
-public protocol RelayDefinition {
-    var relayUrl: String { get }
-    var write: Bool { get set }
-    var subscriptions: [Subscription] { get set }
-    var urlRequest: URL? { get }
-}
-
-public protocol RelayConnectionDelegate: AnyObject {
-    func didReceive(message: RelayMessage, relayUrl: String)
-}
-
 public class RelayConnection: NSObject {
-    var relayDefinition: RelayDefinition
+    var relayUrl: String
+    var subscriptions: [Subscription]
     var webSocketTask: URLSessionWebSocketTask!
     var urlSession: URLSession!
     var delegate: RelayConnectionDelegate?
     var pingTimer: Timer?
     var connected = false
     
-    public init?(relayDefinition: RelayDefinition, delegate: RelayConnectionDelegate? = nil) {
-        guard let url = relayDefinition.urlRequest else { return nil }
-        
-        self.relayDefinition = relayDefinition
+    public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
+        guard let url = URL(string: relayUrl) else { return nil }
+        self.relayUrl = relayUrl
+        self.subscriptions = subscriptions
         self.delegate = delegate
         
         super.init()
@@ -50,11 +40,11 @@ public class RelayConnection: NSObject {
     
     func add(subscriptions: [Subscription]) {
         for sub in subscriptions {
-            if let index = self.relayDefinition.subscriptions.firstIndex(where: { $0.id == sub.id }) {
-                self.relayDefinition.subscriptions[index] = sub
+            if let index = self.subscriptions.firstIndex(where: { $0.id == sub.id }) {
+                self.subscriptions[index] = sub
                 self.subscribe(with: sub)
             } else {
-                self.relayDefinition.subscriptions.append(sub)
+                self.subscriptions.append(sub)
                 self.subscribe(with: sub)
             }
         }
@@ -82,14 +72,14 @@ public class RelayConnection: NSObject {
                         case .data(_): break
                         case .string(let text):
                             if let relayMessage = try? RelayMessage(text: text) {
-                                self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayDefinition.relayUrl)
+                                self.delegate?.didReceive(message: relayMessage, relayUrl: self.relayUrl)
                             }
                         @unknown default:
                             print("Uknown response")
                     }
                     self.listen()
                 case .failure(let error):
-                    print("NostrClient Error: \(self.relayDefinition.relayUrl)" + error.localizedDescription)
+                    print("NostrClient Error: \(self.relayUrl)" + error.localizedDescription)
             }
         }
     }
@@ -110,13 +100,13 @@ public class RelayConnection: NSObject {
     }
     
     func subscribe() {
-        for sub in relayDefinition.subscriptions {
+        for sub in self.subscriptions {
             subscribe(with: sub)
         }
     }
     
     func unsubscribe() {
-        for sub in relayDefinition.subscriptions {
+        for sub in self.subscriptions {
             unsubscribe(withId: sub.id)
         }
     }
@@ -128,7 +118,7 @@ public class RelayConnection: NSObject {
             }
         }
     }
-        
+    
     func subscribe(with subscription: Subscription) {
         if connected {
             if let clientMessage = try? ClientMessage.subscribe(subscription).string() {
@@ -139,10 +129,14 @@ public class RelayConnection: NSObject {
     
 }
 
+public protocol RelayConnectionDelegate: AnyObject {
+    func didReceive(message: RelayMessage, relayUrl: String)
+}
+
 extension  RelayConnection: URLSessionWebSocketDelegate {
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print("Connected to relay: \(self.relayDefinition.relayUrl)")
+        print("Connected to relay: \(self.relayUrl)")
         self.connected = true
         DispatchQueue.main.async {
             self.startPing()
@@ -151,7 +145,7 @@ extension  RelayConnection: URLSessionWebSocketDelegate {
     }
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        print("Disconnected from relay: \(self.relayDefinition.relayUrl)")
+        print("Disconnected from relay: \(self.relayUrl)")
         self.connected = false
         DispatchQueue.main.async {
             self.stopPing()
@@ -159,5 +153,3 @@ extension  RelayConnection: URLSessionWebSocketDelegate {
     }
     
 }
-
-
