@@ -79,7 +79,7 @@ public class RelayConnection: NSObject {
                     }
                     self.listen()
                 case .failure(let error):
-                    print("NostrClient Error: \(self.relayUrl)" + error.localizedDescription)
+                    print("NostrClient Error: \(self.relayUrl) " + error.localizedDescription)
             }
         }
     }
@@ -87,11 +87,13 @@ public class RelayConnection: NSObject {
     func startPing() {
         self.stopPing()
         self.pingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true, block: { [weak self] timer in
-            self?.webSocketTask.sendPing(pongReceiveHandler: { error in
-                if let error {
-                    print(error.localizedDescription)
-                }
-            })
+            if let connected = self?.connected, connected {
+                self?.webSocketTask.sendPing(pongReceiveHandler: { error in
+                    if let error {
+                        print(error.localizedDescription)
+                    }
+                })
+            }
         })
     }
     

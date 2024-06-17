@@ -23,6 +23,14 @@ public class NostrClient: ObservableObject {
         }
     }
     
+    public func connect(relayWithUrl relayUrl: String? = nil) {
+        for relayConnection in relayConnections {
+            if relayConnection.relayUrl == relayUrl || relayUrl == nil {
+                relayConnection.connect()
+            }
+        }
+    }
+    
     public func add(relayWithUrl relayUrl: String, subscriptions: [Subscription] = []) {
         if !relayConnections.contains(where: { $0.relayUrl == relayUrl }) {
             if let relayConnection = RelayConnection(relayUrl: relayUrl, subscriptions: subscriptions, delegate: self) {
