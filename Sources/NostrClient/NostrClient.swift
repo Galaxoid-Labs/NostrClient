@@ -62,7 +62,7 @@ public class NostrClient: ObservableObject {
         }
     }
     
-    public func fetchRelayInfo(relayUrl: String) async -> (url: String, info: RelayInfo)? {
+    public static func fetchRelayInfo(relayUrl: String) async -> (url: String, info: RelayInfo)? {
         let correctedUrl = relayUrl
             .replacingOccurrences(of: "wss://", with: "https://")
             .replacingOccurrences(of: "ws://", with: "http://")
