@@ -31,20 +31,42 @@ public class NostrClient: ObservableObject {
         }
     }
     
-    public func add(relayWithUrl relayUrl: String, subscriptions: [Subscription] = []) {
+    // This will add new relay connection if not already available
+    // If the relay connection is already present it will then simply update the subscriptions
+    // if they are different than whats already subscribed
+    // It's worth noting if you do not specify a specific subscription id that it the subscription
+    // will always be different and you could endup with subs that are very similar
+    public func add(relayWithUrl relayUrl: String, subscriptions: [Subscription] = [], autoConnect: Bool = true) {
         if !relayConnections.contains(where: { $0.relayUrl == relayUrl }) {
             if let relayConnection = RelayConnection(relayUrl: relayUrl, subscriptions: subscriptions, delegate: self) {
-                relayConnection.connect()
                 self.relayConnections.append(relayConnection)
+                if autoConnect {
+                    relayConnection.connect()
+                }
             }
+        } else if let indexOf = self.relayConnections.firstIndex(where: { $0.relayUrl == relayUrl }) {
+            self.relayConnections[indexOf].add(subscriptions: subscriptions)
         }
     }
     
-    public func add(subscriptions: [Subscription], onlyToRelayUrls relayUrls: [String]? = nil) {
+    // This will add subscriptions to found relays and also setup new relay connections if you dont already have them.
+    // Same as above if the subs are different it will resubscribe any with the same id but are different
+    public func add(subscriptions: [Subscription], onlyToRelayUrls relayUrls: [String]? = nil, autoConnect: Bool = true) {
         if let relayUrls = relayUrls {
+            var relayUrlsNotFound: [String] = []
             for url in relayUrls {
                 if let indexOf = self.relayConnections.firstIndex(where: { $0.relayUrl == url }) {
                     self.relayConnections[indexOf].add(subscriptions: subscriptions)
+                } else {
+                    relayUrlsNotFound.append(url)
+                }
+            }
+            for url in relayUrlsNotFound {
+                if let relayConnection = RelayConnection(relayUrl: url, subscriptions: subscriptions, delegate: self) {
+                    self.relayConnections.append(relayConnection)
+                    if autoConnect {
+                        relayConnection.connect()
+                    }
                 }
             }
         } else {

@@ -29,20 +29,26 @@ public class RelayConnection: NSObject {
     }
     
     public func connect() {
-        webSocketTask.resume()
-        self.listen()
+        if !connected {
+            webSocketTask.resume()
+            self.listen()
+        }
     }
     
     public func disconnect() {
-        self.unsubscribe()
-        webSocketTask.cancel(with: .goingAway, reason: nil)
+        if connected {
+            self.unsubscribe()
+            webSocketTask.cancel(with: .goingAway, reason: nil)
+        }
     }
     
     func add(subscriptions: [Subscription]) {
         for sub in subscriptions {
             if let index = self.subscriptions.firstIndex(where: { $0.id == sub.id }) {
-                self.subscriptions[index] = sub
-                self.subscribe(with: sub)
+                if self.subscriptions[index] != sub {
+                    self.subscriptions[index] = sub
+                    self.subscribe(with: sub)
+                }
             } else {
                 self.subscriptions.append(sub)
                 self.subscribe(with: sub)
@@ -51,15 +57,19 @@ public class RelayConnection: NSObject {
     }
     
     func send(event: Event) {
-        if let clientMessage = try? ClientMessage.event(event).string() {
-            self.send(text: clientMessage)
+        if connected {
+            if let clientMessage = try? ClientMessage.event(event).string() {
+                self.send(text: clientMessage)
+            }
         }
     }
     
     func send(text: String) {
-        self.webSocketTask.send(URLSessionWebSocketTask.Message.string(text)) { error in
-            if let error {
-                print(error.localizedDescription)
+        if connected {
+            self.webSocketTask.send(URLSessionWebSocketTask.Message.string(text)) { error in
+                if let error {
+                    print(error.localizedDescription)
+                }
             }
         }
     }
