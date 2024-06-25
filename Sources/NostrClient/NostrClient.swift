@@ -62,6 +62,25 @@ public class NostrClient: ObservableObject {
         }
     }
     
+    public func fetchRelayInfo(relayUrl: String) async -> (url: String, info: RelayInfo)? {
+        let correctedUrl = relayUrl
+            .replacingOccurrences(of: "wss://", with: "https://")
+            .replacingOccurrences(of: "ws://", with: "http://")
+        
+        guard let url = URL(string: correctedUrl) else { return nil }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.setValue("application/nostr+json", forHTTPHeaderField: "Accept")
+        
+        if let res = try? await URLSession.shared.data(for: urlRequest) {
+            let decoder = JSONDecoder()
+            let info = try? decoder.decode(RelayInfo.self, from: res.0)
+            return (url: relayUrl, info: info) as? (url: String, info: RelayInfo)
+        }
+        
+        return nil
+    }
+    
 }
 
 public protocol NostrClientDelegate: AnyObject {

@@ -128,7 +128,6 @@ public class RelayConnection: NSObject {
             }
         }
     }
-    
 }
 
 public protocol RelayConnectionDelegate: AnyObject {

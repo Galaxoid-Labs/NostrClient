@@ -7,7 +7,7 @@
       "location" : "https://github.com/Galaxoid-Labs/Nostr.git",
       "state" : {
         "branch" : "main",
-        "revision" : "404aab58c724196a474c62db7e3fe74df14a6472"
+        "revision" : "c0db40536e366ff8f9f28747bf4dbcda0e6079ba"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GigaBitcoin/secp256k1.swift.git",
       "state" : {
-        "revision" : "347b84ed2aad2305a7233f2a48d76f41e52062a1",
-        "version" : "0.16.0"
+        "revision" : "9683e8e311c76d8114cd308b697dad2f9fc58fed",
+        "version" : "0.17.0"
       }
     }
   ],
