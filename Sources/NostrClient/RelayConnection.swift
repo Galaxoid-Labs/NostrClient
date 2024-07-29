@@ -65,7 +65,6 @@ public class RelayConnection: NSObject {
     }
     
     func send(text: String) {
-        print(text)
         if connected {
             self.webSocketTask.send(URLSessionWebSocketTask.Message.string(text)) { error in
                 if let error {
