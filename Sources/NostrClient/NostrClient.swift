@@ -107,9 +107,19 @@ public class NostrClient: ObservableObject {
 
 public protocol NostrClientDelegate: AnyObject {
     func didReceive(message: RelayMessage, relayUrl: String)
+    func didConnect(relayUrl: String)
+    func didDisconnect(relayUrl: String)
 }
 
 extension NostrClient: RelayConnectionDelegate {
+    public func didConnect(relayUrl: String) {
+        delegate?.didDisconnect(relayUrl: relayUrl)
+    }
+    
+    public func didDisconnect(relayUrl: String) {
+        delegate?.didDisconnect(relayUrl: relayUrl)
+    }
+    
     public func didReceive(message: Nostr.RelayMessage, relayUrl: String) {
         delegate?.didReceive(message: message, relayUrl: relayUrl)
     }

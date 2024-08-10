@@ -9,13 +9,13 @@ import Foundation
 import Nostr
 
 public class RelayConnection: NSObject {
-    var relayUrl: String
+    private(set) public var relayUrl: String
     var subscriptions: [Subscription]
     var webSocketTask: URLSessionWebSocketTask!
     var urlSession: URLSession!
     var delegate: RelayConnectionDelegate?
     var pingTimer: Timer?
-    var connected = false
+    @Published private(set) public var connected = false
     
     public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
         guard let url = URL(string: relayUrl) else { return nil }
@@ -142,6 +142,8 @@ public class RelayConnection: NSObject {
 
 public protocol RelayConnectionDelegate: AnyObject {
     func didReceive(message: RelayMessage, relayUrl: String)
+    func didConnect(relayUrl: String)
+    func didDisconnect(relayUrl: String)
 }
 
 extension  RelayConnection: URLSessionWebSocketDelegate {
@@ -153,6 +155,7 @@ extension  RelayConnection: URLSessionWebSocketDelegate {
             self.startPing()
         }
         self.subscribe()
+        self.delegate?.didConnect(relayUrl: self.relayUrl)
     }
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
@@ -161,6 +164,7 @@ extension  RelayConnection: URLSessionWebSocketDelegate {
         DispatchQueue.main.async {
             self.stopPing()
         }
+        self.delegate?.didDisconnect(relayUrl: self.relayUrl)
     }
     
 }
