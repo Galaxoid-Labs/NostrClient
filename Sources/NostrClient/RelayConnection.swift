@@ -18,18 +18,20 @@ public class RelayConnection: NSObject {
     @Published private(set) public var connected = false
     
     public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
-        guard let url = URL(string: relayUrl) else { return nil }
+        guard let _ = URL(string: relayUrl) else { return nil }
         self.relayUrl = relayUrl
         self.subscriptions = subscriptions
         self.delegate = delegate
         
         super.init()
-        self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        self.webSocketTask = self.urlSession.webSocketTask(with: url)
+
     }
     
     public func connect() {
         if !connected {
+            guard let url = URL(string: relayUrl) else { return }
+            self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+            self.webSocketTask = self.urlSession.webSocketTask(with: url)
             webSocketTask.resume()
             self.listen()
         }
