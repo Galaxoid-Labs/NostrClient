@@ -94,6 +94,7 @@ public class RelayConnection: NSObject {
                     self.listen()
                 case .failure(let error):
                     print("NostrClient Error: \(self.relayUrl) " + error.localizedDescription)
+                    self.needsReconnect = true
             }
         }
     }
@@ -104,11 +105,9 @@ public class RelayConnection: NSObject {
             if path.status == .satisfied {
                 // Network is available again
                 if ((self?.needsReconnect) != nil) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        if !(self?.connected ?? false) {
-                            self?.needsReconnect = false
-                            self?.connect()
-                        }
+                    if !(self?.connected ?? false) {
+                        self?.needsReconnect = false
+                        self?.connect()
                     }
                 }
 
