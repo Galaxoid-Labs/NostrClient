@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Network
 import Nostr
 
 public class RelayConnection: NSObject {
@@ -16,8 +15,6 @@ public class RelayConnection: NSObject {
     var urlSession: URLSession!
     var delegate: RelayConnectionDelegate?
     var pingTimer: Timer?
-    var networkMonitor: NWPathMonitor?
-    var needsReconnect = false
     @Published private(set) public var connected = false
     
     public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
@@ -29,7 +26,6 @@ public class RelayConnection: NSObject {
         super.init()
         self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         self.webSocketTask = self.urlSession.webSocketTask(with: url)
-        self.setupNetworkMonitor()
     }
     
     public func connect() {
@@ -94,35 +90,9 @@ public class RelayConnection: NSObject {
                     self.listen()
                 case .failure(let error):
                     print("NostrClient Error: \(self.relayUrl) " + error.localizedDescription)
-                    self.needsReconnect = true
+                    self.onDisconnection()
             }
         }
-    }
-    
-    private func setupNetworkMonitor() {
-        networkMonitor = NWPathMonitor()
-        networkMonitor?.pathUpdateHandler = { [weak self] path in
-            if path.status == .satisfied {
-                // Network is available again
-                if ((self?.needsReconnect) != nil) {
-                    if !(self?.connected ?? false) {
-                        self?.needsReconnect = false
-                        self?.connect()
-                    }
-                }
-
-            } else {
-                // Network is unavailable
-                print("No network connection: Disconnected from relay: \(self?.relayUrl ?? "")")
-                self?.needsReconnect = true
-                self?.connected = false
-                DispatchQueue.main.async {
-                    self?.stopPing()
-                }
-                self?.delegate?.didDisconnect(relayUrl: self?.relayUrl ?? "")
-            }
-        }
-        networkMonitor?.start(queue: DispatchQueue.global())
     }
     
     func startPing() {
@@ -132,6 +102,7 @@ public class RelayConnection: NSObject {
                 self?.webSocketTask.sendPing(pongReceiveHandler: { error in
                     if let error {
                         print(error.localizedDescription)
+                        self?.onDisconnection()
                     }
                 })
             }
@@ -170,8 +141,21 @@ public class RelayConnection: NSObject {
         }
     }
     
-    deinit {
-        networkMonitor?.cancel()
+    func onConnection() {
+        self.connected = true
+        DispatchQueue.main.async {
+            self.startPing()
+        }
+        self.subscribe()
+        self.delegate?.didConnect(relayUrl: self.relayUrl)
+    }
+    
+    func onDisconnection() {
+        self.connected = false
+        DispatchQueue.main.async {
+            self.stopPing()
+        }
+        self.delegate?.didDisconnect(relayUrl: self.relayUrl)
     }
 }
 
@@ -185,21 +169,12 @@ extension  RelayConnection: URLSessionWebSocketDelegate {
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         print("Connected to relay: \(self.relayUrl)")
-        self.connected = true
-        DispatchQueue.main.async {
-            self.startPing()
-        }
-        self.subscribe()
-        self.delegate?.didConnect(relayUrl: self.relayUrl)
+        onConnection()
     }
     
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("Disconnected from relay: \(self.relayUrl)")
-        self.connected = false
-        DispatchQueue.main.async {
-            self.stopPing()
-        }
-        self.delegate?.didDisconnect(relayUrl: self.relayUrl)
+        onDisconnection()
     }
     
 }
