@@ -113,7 +113,7 @@ public protocol NostrClientDelegate: AnyObject {
 
 extension NostrClient: RelayConnectionDelegate {
     public func didConnect(relayUrl: String) {
-        delegate?.didDisconnect(relayUrl: relayUrl)
+        delegate?.didConnect(relayUrl: relayUrl)
     }
     
     public func didDisconnect(relayUrl: String) {
