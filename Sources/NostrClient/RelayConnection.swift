@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Network
 import Nostr
 
 public class RelayConnection: NSObject {
@@ -15,6 +16,8 @@ public class RelayConnection: NSObject {
     var urlSession: URLSession!
     var delegate: RelayConnectionDelegate?
     var pingTimer: Timer?
+    var networkMonitor: NWPathMonitor?
+    var needsReconnect = false
     @Published private(set) public var connected = false
     
     public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
@@ -92,6 +95,30 @@ public class RelayConnection: NSObject {
                     print("NostrClient Error: \(self.relayUrl) " + error.localizedDescription)
             }
         }
+    }
+    
+    private func setupNetworkMonitor() {
+        networkMonitor = NWPathMonitor()
+        networkMonitor?.pathUpdateHandler = { [weak self] path in
+            if path.status == .satisfied {
+                // Network is available again
+                if ((self?.needsReconnect) != nil) {
+                    if !(self?.connected ?? false) {
+                        self?.connect()
+                    }
+                }
+            } else {
+                // Network is unavailable
+                print("No network connection: Disconnected from relay: \(self?.relayUrl ?? "")")
+                self?.needsReconnect = true
+                self?.connected = false
+                DispatchQueue.main.async {
+                    self?.stopPing()
+                }
+                self?.delegate?.didDisconnect(relayUrl: self?.relayUrl ?? "")
+            }
+        }
+        networkMonitor?.start(queue: DispatchQueue.global())
     }
     
     func startPing() {
