@@ -103,14 +103,15 @@ public class RelayConnection: NSObject {
         networkMonitor?.pathUpdateHandler = { [weak self] path in
             if path.status == .satisfied {
                 // Network is available again
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    if ((self?.needsReconnect) != nil) {
+                if ((self?.needsReconnect) != nil) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         if !(self?.connected ?? false) {
                             self?.needsReconnect = false
                             self?.connect()
                         }
                     }
                 }
+
             } else {
                 // Network is unavailable
                 print("No network connection: Disconnected from relay: \(self?.relayUrl ?? "")")
