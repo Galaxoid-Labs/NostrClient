@@ -29,6 +29,7 @@ public class RelayConnection: NSObject {
         super.init()
         self.urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         self.webSocketTask = self.urlSession.webSocketTask(with: url)
+        self.setupNetworkMonitor()
     }
     
     public func connect() {
@@ -104,6 +105,7 @@ public class RelayConnection: NSObject {
                 // Network is available again
                 if ((self?.needsReconnect) != nil) {
                     if !(self?.connected ?? false) {
+                        self?.needsReconnect = false
                         self?.connect()
                     }
                 }
@@ -164,6 +166,10 @@ public class RelayConnection: NSObject {
                 self.send(text: clientMessage)
             }
         }
+    }
+    
+    deinit {
+        networkMonitor?.cancel()
     }
 }
 
