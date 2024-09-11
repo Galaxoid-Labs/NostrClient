@@ -31,6 +31,14 @@ public class NostrClient: ObservableObject {
         }
     }
     
+    public func disconnect(relayWithUrl relayUrl: String? = nil) {
+        for relayConnection in relayConnections {
+            if relayConnection.relayUrl == relayUrl || relayUrl == nil {
+                relayConnection.disconnect()
+            }
+        }
+    }
+    
     // This will add new relay connection if not already available
     // If the relay connection is already present it will then simply update the subscriptions
     // if they are different than whats already subscribed
