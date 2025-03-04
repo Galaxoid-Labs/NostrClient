@@ -8,17 +8,19 @@ public class NostrClient: ObservableObject {
     public var delegate: NostrClientDelegate?
     
     public init() {}
+   
+    // allow to pass a closer for errors?
     
-    public func send(event: Event, onlyToRelayUrls relayUrls: [String]? = nil) {
+    public func send(event: Event, onlyToRelayUrls relayUrls: [String]? = nil, completion: ((Error?) -> Void)? = nil) {
         if let relayUrls = relayUrls {
             for url in relayUrls {
                 if let indexOf = self.relayConnections.firstIndex(where: { $0.relayUrl == url }) {
-                    self.relayConnections[indexOf].send(event: event)
+                    self.relayConnections[indexOf].send(event: event, completion: completion)
                 }
             }
         } else {
             for (idx, _) in relayConnections.enumerated() {
-                relayConnections[idx].send(event: event)
+                relayConnections[idx].send(event: event, completion: completion)
             }
         }
     }

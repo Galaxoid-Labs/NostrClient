@@ -58,20 +58,18 @@ public class RelayConnection: NSObject {
         }
     }
     
-    func send(event: Event) {
+    func send(event: Event, completion: ((Error?) -> Void)? = nil) {
         if connected {
             if let clientMessage = try? ClientMessage.event(event).string() {
-                self.send(text: clientMessage)
+                self.send(text: clientMessage, completion: completion)
             }
         }
     }
     
-    func send(text: String) {
+    func send(text: String, completion: ((Error?) -> Void)? = nil) {
         if connected {
             self.webSocketTask.send(URLSessionWebSocketTask.Message.string(text)) { error in
-                if let error {
-                    print(error.localizedDescription)
-                }
+                completion?(error)
             }
         }
     }
