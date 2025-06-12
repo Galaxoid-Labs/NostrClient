@@ -4,7 +4,13 @@ import FoundationNetworking
 import Foundation
 import Nostr
 
-public class NostrClient: ObservableObject {
+#if os(Linux) || os(Windows)
+public class PlatformBaseClass: NSObject {}
+#else
+public class PlatformBaseClass: ObservableObject {}
+#endif
+
+public class NostrClient: PlatformBaseClass {
    
 #if os(Linux) || os(Windows)
     public private(set) var relayConnections: [RelayConnection] = []
@@ -14,7 +20,7 @@ public class NostrClient: ObservableObject {
     
     public var delegate: NostrClientDelegate?
     
-    public init() {}
+    public override init() {}
    
     // allow to pass a closer for errors?
     
