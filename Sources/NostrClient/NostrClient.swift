@@ -1,9 +1,16 @@
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Foundation
 import Nostr
 
 public class NostrClient: ObservableObject {
-    
-    @Published private(set) public var relayConnections: [RelayConnection] = []
+   
+#if os(Linux) || os(Windows)
+    public private(set) var relayConnections: [RelayConnection] = []
+#else
+    @Published public private(set) var relayConnections: [RelayConnection] = []
+#endif
     
     public var delegate: NostrClientDelegate?
     

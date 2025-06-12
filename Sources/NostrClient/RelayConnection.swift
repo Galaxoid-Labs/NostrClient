@@ -18,7 +18,11 @@ public class RelayConnection: NSObject {
     var urlSession: URLSession!
     var delegate: RelayConnectionDelegate?
     var pingTimer: Timer?
-    @Published private(set) public var connected = false
+#if os(Linux) || os(Windows)
+    public private(set) var connected = false
+#else
+    @Published public private(set) var connected = false
+#endif
     
     public init?(relayUrl: String, subscriptions: [Subscription] = [], delegate: RelayConnectionDelegate? = nil) {
         guard let _ = URL(string: relayUrl) else { return nil }
