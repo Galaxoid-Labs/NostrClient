@@ -1,5 +1,5 @@
 # NostrClient
-NostrClient is a lightweight Swift package for handling socket connections and subscriptions. It uses [Nostr](https://github.com/Galaxoid-Labs/Nostr.swift) under the hood.
+NostrClient is a lightweight Swift package for handling socket connections and subscriptions. It uses [Nostr](https://github.com/Galaxoid-Labs/Nostr) under the hood.
 
 # Goals
 - Minimal dependencies with support for as many platforms as possible.
@@ -7,7 +7,7 @@ NostrClient is a lightweight Swift package for handling socket connections and s
 - Good test coverage
 
 # Dependencies
-- [Nostr](https://github.com/Galaxoid-Labs/Nostr.swift)
+- [Nostr](https://github.com/Galaxoid-Labs/Nostr)
 
 # Platforms
 - ✅ MacOS 14+
