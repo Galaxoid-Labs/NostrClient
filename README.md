@@ -17,8 +17,8 @@ NostrClient is a lightweight Swift package for handling socket connections and s
 - ✅ VisionOS 1+
 - ✅ tvOS 17+ 
 - ✅ watchOS 10+
-- ❓ Linux (Unfortunatley I dont belive that URLSessionWebSocketTask works on Linux)
-- ❓ Windows (Unfortunatley I dont belive that URLSessionWebSocketTask works on Windows)
+- ✅ Linux
+- ❓ Windows (Not tested, but should potentially work)
 
 # Todo
 - Documentation
